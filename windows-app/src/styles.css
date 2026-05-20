@@ -1,0 +1,164 @@
+:root {
+  --bg: #f6f7f9;
+  --card: #ffffff;
+  --line: #dfe3ea;
+  --text: #1f2937;
+  --muted: #6b7280;
+  --primary: #0f6bf2;
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: linear-gradient(180deg, #f8fbff 0%, #f5f6f8 100%);
+  color: var(--text);
+  font: 14px/1.5 "Segoe UI", "Microsoft YaHei", sans-serif;
+}
+
+.app {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 18px 20px 24px;
+}
+
+.top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+h1 { margin: 0; font-size: 24px; }
+h2 { margin: 0 0 8px; font-size: 16px; }
+
+.actions {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+button {
+  border: 1px solid var(--line);
+  background: #fff;
+  color: var(--text);
+  border-radius: 8px;
+  padding: 8px 12px;
+  cursor: pointer;
+}
+button:hover { border-color: #b8c4d8; }
+button:disabled { opacity: 0.6; cursor: not-allowed; }
+button.primary {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+button.ghost { background: transparent; }
+
+.progressWrap {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 16px;
+}
+progress { width: 100%; height: 14px; }
+
+.fileList {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  min-height: 120px;
+  max-height: 180px;
+  overflow: auto;
+  padding: 8px;
+}
+
+.fileRow {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+  align-items: center;
+  padding: 6px 8px;
+  border-radius: 8px;
+}
+.fileRow:hover { background: #f5f8ff; }
+.filePath {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.removeBtn {
+  padding: 4px 8px;
+  font-size: 12px;
+}
+
+.status {
+  color: var(--muted);
+  margin: 6px 2px 14px;
+}
+
+textarea#logs {
+  width: 100%;
+  height: 230px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 10px;
+  resize: vertical;
+  font: 12px/1.5 Consolas, "SFMono-Regular", Menlo, monospace;
+  white-space: pre;
+}
+
+#settingsDialog {
+  width: min(900px, 92vw);
+  border: none;
+  border-radius: 12px;
+  padding: 0;
+}
+#settingsForm {
+  padding: 16px;
+}
+.dialogHeader h3 {
+  margin: 0 0 12px;
+  font-size: 20px;
+}
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px 12px;
+}
+label { display: grid; gap: 6px; font-size: 12px; }
+input[type="text"], input[type="password"], input[type="number"] {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px;
+  font: 13px "Segoe UI", "Microsoft YaHei", sans-serif;
+}
+.guide {
+  margin: 10px 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+.guide a { color: var(--primary); text-decoration: none; }
+.lineCheck {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 0;
+  font-size: 13px;
+}
+.lineCheck.sub { margin-left: 24px; }
+.advanced { margin-top: 8px; }
+.advanced summary { cursor: pointer; font-weight: 600; }
+.advancedGrid { margin-top: 10px; }
+menu {
+  margin: 16px 0 0;
+  padding: 0;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+@media (max-width: 860px) {
+  .grid { grid-template-columns: 1fr; }
+}

@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>豆包语音妙记</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="app">
+      <header class="top">
+        <h1>豆包语音妙记</h1>
+        <button id="openSettings" class="ghost">⚙ 设置</button>
+      </header>
+
+      <section class="actions">
+        <button id="addAudio">添加音频</button>
+        <button id="clearReselect">清空并重选</button>
+        <button id="startBtn" class="primary">开始转写</button>
+      </section>
+
+      <section class="progressWrap">
+        <progress id="overallProgress" max="1" value="0"></progress>
+        <span id="progressText">等待开始</span>
+      </section>
+
+      <section>
+        <h2>已选音频（支持多次添加，可跨文件夹）</h2>
+        <div id="fileList" class="fileList"></div>
+        <div id="statusText" class="status">请选择一个或多个 m4a/mp3 音频文件</div>
+      </section>
+
+      <section>
+        <h2>运行日志</h2>
+        <textarea id="logs" readonly></textarea>
+      </section>
+    </div>
+
+    <dialog id="settingsDialog">
+      <form method="dialog" id="settingsForm">
+        <div class="dialogHeader">
+          <h3>设置</h3>
+        </div>
+
+        <div class="grid">
+          <label>应用 Key (VOLC_APP_KEY)<input id="volcAppKey" type="text" /></label>
+          <label>访问 Key (VOLC_ACCESS_KEY)<input id="volcAccessKey" type="password" /></label>
+          <label>资源 ID (VOLC_RESOURCE_ID)<input id="volcResourceId" type="text" /></label>
+        </div>
+
+        <div class="guide">配置指南：
+          <a href="https://console.volcengine.com/speech/app?opt=create" target="_blank">创建应用</a>
+          <span>｜</span>
+          <a href="https://console.volcengine.com/speech/service/10039" target="_blank">模型信息</a>
+        </div>
+
+        <hr />
+
+        <div class="grid">
+          <label>地域 (TOS_REGION)<input id="tosRegion" type="text" /></label>
+          <label>访问域名 (TOS_ENDPOINT)<input id="tosEndpoint" type="text" /></label>
+          <label>存储桶名称 (TOS_BUCKET)<input id="tosBucket" type="text" /></label>
+          <label>访问密钥 AK (TOS_AK)<input id="tosAK" type="text" /></label>
+          <label>访问密钥 SK (TOS_SK)<input id="tosSK" type="password" /></label>
+          <label>STS 临时令牌（可选）<input id="tosStsToken" type="text" /></label>
+          <label>对象前缀（目录）<input id="tosObjectPrefix" type="text" /></label>
+        </div>
+
+        <label class="lineCheck"><input id="completionSoundEnabled" type="checkbox" />完成时声音提示</label>
+
+        <details id="advanced" class="advanced">
+          <summary>高级选项（任务参数）</summary>
+          <div class="grid advancedGrid">
+            <label>签名 URL 有效期（秒）<input id="tosSignExpiresSec" type="number" min="60" step="1" /></label>
+            <label>轮询间隔（秒）<input id="pollIntervalSec" type="number" min="1" step="1" /></label>
+            <label>最长等待（分钟）<input id="maxWaitMin" type="number" min="1" step="1" /></label>
+            <label>最大并发任务数<input id="maxConcurrentJobs" type="number" min="1" step="1" /></label>
+          </div>
+
+          <label class="lineCheck"><input id="deleteTempObject" type="checkbox" />完成后删除 TOS 临时音频</label>
+          <label class="lineCheck"><input id="saveRawJSON" type="checkbox" />保存原始响应 JSON（调试用）</label>
+
+          <hr />
+
+          <label class="lineCheck"><input id="translationEnabled" type="checkbox" />启用翻译文本（可选）</label>
+          <label class="lineCheck sub"><input id="translateENToZH" type="checkbox" />英语 -> 中文</label>
+          <label class="lineCheck sub"><input id="translateZHToEN" type="checkbox" />中文 -> 英文</label>
+        </details>
+
+        <menu>
+          <button type="button" id="settingsCancel">取消</button>
+          <button type="button" id="settingsSave" class="primary">保存</button>
+        </menu>
+      </form>
+    </dialog>
+
+    <script src="./renderer.js"></script>
+  </body>
+</html>

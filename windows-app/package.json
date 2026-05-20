@@ -1,0 +1,39 @@
+{
+  "name": "doubao-minutes-windows",
+  "productName": "豆包语音妙记",
+  "version": "26.5.20-v1",
+  "description": "Windows 桌面版：豆包语音妙记音频转写",
+  "main": "main.js",
+  "author": "Audio2Txt",
+  "license": "MIT",
+  "scripts": {
+    "dev": "electron .",
+    "pack:win": "electron-builder --win portable --x64",
+    "pack:win:nsis": "electron-builder --win nsis"
+  },
+  "devDependencies": {
+    "electron": "^31.7.7",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "com.audio2txt.doubao.windows",
+    "productName": "豆包语音妙记",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "src/**/*",
+      "lib/**/*",
+      "assets/**/*",
+      "package.json"
+    ],
+    "asar": true,
+    "win": {
+      "target": [
+        "portable"
+      ]
+    }
+  }
+}
