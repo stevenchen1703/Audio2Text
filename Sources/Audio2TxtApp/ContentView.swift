@@ -70,14 +70,9 @@ final class AppViewModel: ObservableObject {
         fileProgress = Dictionary(uniqueKeysWithValues: selectedAudioURLs.map { ($0, 0.0) })
         overallProgress = 0.0
         overallProgressText = "准备中 0%"
-        appendLog("开始加载 .env 配置")
-
         Task {
             do {
                 let fileEnv = (try? EnvLoader.load()) ?? [:]
-                if fileEnv.isEmpty {
-                    appendLog(".env 不存在或读取失败，将使用本地设置面板配置")
-                }
                 let env = settings.mergedEnv(base: fileEnv)
                 let config = try AppConfig(env: env)
                 let files = selectedAudioURLs
