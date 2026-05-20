@@ -412,11 +412,16 @@ struct ContentView: View {
 struct SettingsView: View {
     @State private var draft: AppSettings
     @State private var showAdvanced: Bool = false
+    @State private var translateENToZH: Bool
+    @State private var translateZHToEN: Bool
     let onSave: (AppSettings) -> Void
     let onClose: () -> Void
 
     init(initial: AppSettings, onSave: @escaping (AppSettings) -> Void, onClose: @escaping () -> Void) {
         _draft = State(initialValue: initial)
+        let isZhToEn = initial.translationSourceLang == "zh_cn" && initial.translationTargetLang == "en_us"
+        _translateZHToEN = State(initialValue: isZhToEn)
+        _translateENToZH = State(initialValue: !isZhToEn)
         self.onSave = onSave
         self.onClose = onClose
     }
@@ -435,6 +440,19 @@ struct SettingsView: View {
                         LabeledField("应用 Key (VOLC_APP_KEY)", text: $draft.volcAppKey)
                         LabeledSecureField("访问 Key (VOLC_ACCESS_KEY)", text: $draft.volcAccessKey)
                         LabeledField("资源 ID (VOLC_RESOURCE_ID)", text: $draft.volcResourceId)
+                        HStack(spacing: 8) {
+                            Text("配置指南：")
+                                .font(.system(size: 12))
+                                .foregroundColor(.secondary)
+                            Link("创建应用", destination: URL(string: "https://console.volcengine.com/speech/app?opt=create")!)
+                                .font(.system(size: 12))
+                            Text("｜")
+                                .font(.system(size: 12))
+                                .foregroundColor(.secondary)
+                            Link("模型信息", destination: URL(string: "https://console.volcengine.com/speech/service/10039")!)
+                                .font(.system(size: 12))
+                        }
+                        .padding(.leading, 214)
                     }
 
                     Divider()
@@ -480,13 +498,35 @@ struct SettingsView: View {
                             Divider()
 
                             Toggle("启用翻译文本（可选）", isOn: $draft.translationEnabled)
-                            HelpText("默认语言方向为英文音频翻译成中文（en_us -> zh_cn）。")
+                                .onChange(of: draft.translationEnabled) { enabled in
+                                    if enabled {
+                                        translateENToZH = true
+                                        translateZHToEN = false
+                                    }
+                                }
+                            HelpText("默认关闭；开启后默认方向为英语 -> 中文。")
 
-                            LabeledField("翻译源语言", text: $draft.translationSourceLang)
-                            HelpText("对应 TRANSLATION_SOURCE_LANG，默认 en_us。")
+                            Toggle("英语 -> 中文", isOn: $translateENToZH)
+                                .disabled(!draft.translationEnabled)
+                                .opacity(draft.translationEnabled ? 1.0 : 0.45)
+                                .onChange(of: translateENToZH) { newValue in
+                                    if newValue {
+                                        translateZHToEN = false
+                                    } else if !translateZHToEN {
+                                        translateENToZH = true
+                                    }
+                                }
 
-                            LabeledField("翻译目标语言", text: $draft.translationTargetLang)
-                            HelpText("对应 TRANSLATION_TARGET_LANG，默认 zh_cn。")
+                            Toggle("中文 -> 英文", isOn: $translateZHToEN)
+                                .disabled(!draft.translationEnabled)
+                                .opacity(draft.translationEnabled ? 1.0 : 0.45)
+                                .onChange(of: translateZHToEN) { newValue in
+                                    if newValue {
+                                        translateENToZH = false
+                                    } else if !translateENToZH {
+                                        translateZHToEN = true
+                                    }
+                                }
                         }
                         .padding(.top, 8)
                     } label: {
@@ -500,6 +540,13 @@ struct SettingsView: View {
                 Spacer()
                 Button("取消") { onClose() }
                 Button("保存") {
+                    if translateZHToEN {
+                        draft.translationSourceLang = "zh_cn"
+                        draft.translationTargetLang = "en_us"
+                    } else {
+                        draft.translationSourceLang = "en_us"
+                        draft.translationTargetLang = "zh_cn"
+                    }
                     onSave(draft)
                     onClose()
                 }

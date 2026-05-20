@@ -41,7 +41,7 @@ public struct AppConfig: Sendable {
         self.maxWaitMin = Int(env["MAX_WAIT_MIN"] ?? "120") ?? 120
         self.maxConcurrentJobs = max(1, Int(env["MAX_CONCURRENT_JOBS"] ?? "2") ?? 2)
         self.deleteTemporaryObject = (env["DELETE_TEMP_OBJECT"] ?? "true").lowercased() == "true"
-        self.saveRawJSON = (env["SAVE_RAW_JSON"] ?? "true").lowercased() == "true"
+        self.saveRawJSON = (env["SAVE_RAW_JSON"] ?? "false").lowercased() == "true"
         self.translationEnabled = (env["TRANSLATION_ENABLE"] ?? "false").lowercased() == "true"
         self.translationSourceLang = env["TRANSLATION_SOURCE_LANG"] ?? "en_us"
         self.translationTargetLang = env["TRANSLATION_TARGET_LANG"] ?? "zh_cn"

@@ -18,7 +18,7 @@ struct AppSettings: Codable, Equatable {
     var maxWaitMin: Int = 120
     var maxConcurrentJobs: Int = 10
     var deleteTempObject: Bool = true
-    var saveRawJSON: Bool = true
+    var saveRawJSON: Bool = false
     var translationEnabled: Bool = false
     var translationSourceLang: String = "en_us"
     var translationTargetLang: String = "zh_cn"
@@ -68,7 +68,13 @@ enum AppSettingsStore {
         else {
             return AppSettings()
         }
-        return decoded
+        var normalized = decoded
+        // 保证默认行为：raw json 默认关闭；如旧配置为 true，则自动回写为 false
+        if normalized.saveRawJSON {
+            normalized.saveRawJSON = false
+            save(normalized)
+        }
+        return normalized
     }
 
     static func save(_ settings: AppSettings) {
