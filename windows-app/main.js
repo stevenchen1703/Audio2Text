@@ -14,12 +14,14 @@ const {
 let mainWindow = null;
 
 function createWindow() {
+  const iconPath = path.join(__dirname, 'assets', 'icon.ico');
   mainWindow = new BrowserWindow({
     width: 1080,
     height: 760,
     minWidth: 960,
     minHeight: 680,
     title: '豆包语音妙记',
+    icon: iconPath,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
@@ -37,6 +39,9 @@ function createWindow() {
 }
 
 app.whenReady().then(() => {
+  if (process.platform === 'win32') {
+    app.setAppUserModelId('com.audio2txt.doubao.windows');
+  }
   createWindow();
 
   app.on('activate', () => {

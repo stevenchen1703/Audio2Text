@@ -13,7 +13,8 @@
   },
   "devDependencies": {
     "electron": "^31.7.7",
-    "electron-builder": "^24.13.3"
+    "electron-builder": "^24.13.3",
+    "png-to-ico": "^3.0.1"
   },
   "build": {
     "appId": "com.audio2txt.doubao.windows",
@@ -31,6 +32,7 @@
     ],
     "asar": true,
     "win": {
+      "icon": "assets/icon.ico",
       "target": [
         "portable"
       ]
