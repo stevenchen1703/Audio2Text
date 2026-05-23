@@ -1,6 +1,7 @@
 import AppKit
 import Audio2TxtCore
 import SwiftUI
+import UniformTypeIdentifiers
 
 @MainActor
 final class AppViewModel: ObservableObject {
@@ -27,19 +28,33 @@ final class AppViewModel: ObservableObject {
         panel.title = "添加课程录音（可多选）"
 
         if panel.runModal() == .OK {
-            var merged = Set(selectedAudioURLs)
-            var newCount = 0
-            for url in panel.urls {
-                if merged.insert(url).inserted {
-                    newCount += 1
-                }
+            addAudioURLs(panel.urls, source: "选择")
+        }
+    }
+
+    func addAudioURLs(_ urls: [URL], source: String) {
+        guard !urls.isEmpty else { return }
+
+        let supported = urls.filter { isSupportedAudioFile($0) }
+        let unsupported = urls.filter { !isSupportedAudioFile($0) }
+
+        var merged = Set(selectedAudioURLs)
+        var newCount = 0
+        for url in supported {
+            if merged.insert(url).inserted {
+                newCount += 1
             }
-            selectedAudioURLs = Array(merged).sorted { $0.path < $1.path }
-            status = "已选择 \(selectedAudioURLs.count) 个文件"
-            appendLog("新增 \(newCount) 个文件，当前总数: \(selectedAudioURLs.count)")
-            for url in panel.urls.sorted(by: { $0.path < $1.path }) {
-                appendLog("- \(url.path)")
-            }
+        }
+
+        selectedAudioURLs = Array(merged).sorted { $0.path < $1.path }
+        status = "已选择 \(selectedAudioURLs.count) 个文件"
+
+        appendLog("\(source)新增 \(newCount) 个文件，当前总数: \(selectedAudioURLs.count)")
+        for url in supported.sorted(by: { $0.path < $1.path }) {
+            appendLog("- \(url.path)")
+        }
+        if !unsupported.isEmpty {
+            appendLog("\(source)忽略了 \(unsupported.count) 个非音频文件")
         }
     }
 
@@ -304,10 +319,16 @@ final class AppViewModel: ObservableObject {
             NSSound.beep()
         }
     }
+
+    private func isSupportedAudioFile(_ url: URL) -> Bool {
+        let ext = url.pathExtension.lowercased()
+        return ext == "mp3" || ext == "m4a" || ext == "wav" || ext == "aiff"
+    }
 }
 
 struct ContentView: View {
     @StateObject private var vm = AppViewModel()
+    @State private var isAudioDropTargeted = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -344,38 +365,62 @@ struct ContentView: View {
             Text("已选音频（支持多次添加，可跨文件夹）")
                 .font(.headline)
 
-            ScrollView {
-                if vm.selectedAudioURLs.isEmpty {
-                    Text("未选择文件")
-                        .font(.system(size: 12))
-                        .foregroundColor(.secondary)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                } else {
-                    LazyVStack(alignment: .leading, spacing: 8) {
-                        ForEach(vm.selectedAudioURLs, id: \.self) { url in
-                            HStack(alignment: .top, spacing: 8) {
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(url.lastPathComponent)
-                                        .font(.system(size: 12, weight: .semibold))
-                                    Text(url.deletingLastPathComponent().path)
-                                        .font(.system(size: 11, design: .monospaced))
-                                        .foregroundColor(.secondary)
+            ZStack {
+                ScrollView {
+                    if vm.selectedAudioURLs.isEmpty {
+                        Text("未选择文件")
+                            .font(.system(size: 12))
+                            .foregroundColor(.secondary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    } else {
+                        LazyVStack(alignment: .leading, spacing: 8) {
+                            ForEach(vm.selectedAudioURLs, id: \.self) { url in
+                                HStack(alignment: .top, spacing: 8) {
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text(url.lastPathComponent)
+                                            .font(.system(size: 12, weight: .semibold))
+                                        Text(url.deletingLastPathComponent().path)
+                                            .font(.system(size: 11, design: .monospaced))
+                                            .foregroundColor(.secondary)
+                                    }
+                                    Spacer()
+                                    Button("删除") { vm.removeAudio(url) }
+                                        .buttonStyle(.bordered)
+                                        .controlSize(.small)
+                                        .disabled(vm.isRunning)
                                 }
-                                Spacer()
-                                Button("删除") { vm.removeAudio(url) }
-                                    .buttonStyle(.bordered)
-                                    .controlSize(.small)
-                                    .disabled(vm.isRunning)
+                                .padding(.vertical, 2)
                             }
-                            .padding(.vertical, 2)
                         }
+                    }
+                }
+                .padding(8)
+
+                if isAudioDropTargeted {
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(Color.accentColor.opacity(0.10))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 8)
+                                .stroke(Color.accentColor.opacity(0.7), style: StrokeStyle(lineWidth: 1.5, dash: [6]))
+                        )
+
+                    VStack(spacing: 8) {
+                        Image(systemName: "square.and.arrow.up.fill")
+                            .font(.system(size: 30))
+                            .foregroundColor(.accentColor)
+                        Text("上传文件")
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundColor(.accentColor)
                     }
                 }
             }
             .frame(maxHeight: 140)
-            .padding(8)
             .background(Color.gray.opacity(0.08))
             .clipShape(RoundedRectangle(cornerRadius: 8))
+            .onDrop(of: [UTType.fileURL.identifier], isTargeted: $isAudioDropTargeted) { providers in
+                guard !vm.isRunning else { return false }
+                return handleAudioDrop(providers)
+            }
 
             Text(vm.status)
                 .font(.system(size: 13))
@@ -401,6 +446,32 @@ struct ContentView: View {
                 onClose: { vm.isSettingsPresented = false }
             )
         }
+    }
+
+    private func handleAudioDrop(_ providers: [NSItemProvider]) -> Bool {
+        let fileProviders = providers.filter { $0.hasItemConformingToTypeIdentifier(UTType.fileURL.identifier) }
+        guard !fileProviders.isEmpty else { return false }
+
+        for provider in fileProviders {
+            provider.loadItem(forTypeIdentifier: UTType.fileURL.identifier, options: nil) { item, _ in
+                let url: URL?
+                if let data = item as? Data {
+                    url = URL(dataRepresentation: data, relativeTo: nil)
+                } else if let text = item as? String {
+                    url = URL(string: text)
+                } else if let nsURL = item as? NSURL {
+                    url = nsURL as URL
+                } else {
+                    url = nil
+                }
+
+                guard let fileURL = url else { return }
+                Task { @MainActor in
+                    vm.addAudioURLs([fileURL], source: "拖拽")
+                }
+            }
+        }
+        return true
     }
 }
 

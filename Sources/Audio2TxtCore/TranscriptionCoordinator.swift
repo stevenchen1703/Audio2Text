@@ -42,17 +42,26 @@ public final class TranscriptionCoordinator: @unchecked Sendable {
         let deadline = Date().addingTimeInterval(TimeInterval(config.maxWaitMin * 60))
         var finalQuery: QueryResult?
         var rateLimitBackoffSec = max(config.pollIntervalSec, 5)
+        var networkBackoffSec = 3
 
         while Date() < deadline {
             let queryResult: QueryResult
             do {
                 queryResult = try await minutesClient.query(taskID: taskID, requestID: requestID)
                 rateLimitBackoffSec = max(config.pollIntervalSec, 5)
+                networkBackoffSec = 3
             } catch {
                 if isHTTP429(error) {
                     rateLimitBackoffSec = min(rateLimitBackoffSec * 2, 180)
                     let waitSec = rateLimitBackoffSec + Int.random(in: 0...6)
                     logger("查询触发限流(429)，\(waitSec)s 后重试")
+                    try await Task.sleep(nanoseconds: UInt64(waitSec) * 1_000_000_000)
+                    continue
+                }
+                if isTransientNetworkError(error) {
+                    networkBackoffSec = min(networkBackoffSec * 2, 45)
+                    let waitSec = networkBackoffSec + Int.random(in: 0...4)
+                    logger("查询网络波动(\((error as NSError).localizedDescription))，\(waitSec)s 后重试")
                     try await Task.sleep(nanoseconds: UInt64(waitSec) * 1_000_000_000)
                     continue
                 }
@@ -160,6 +169,35 @@ public final class TranscriptionCoordinator: @unchecked Sendable {
     private func isHTTP429(_ error: Error) -> Bool {
         let message = (error as NSError).localizedDescription.lowercased()
         return message.contains("http 429") || message.contains(" 429")
+    }
+
+    private func isTransientNetworkError(_ error: Error) -> Bool {
+        let nsError = error as NSError
+        if nsError.domain == NSURLErrorDomain {
+            let code = URLError.Code(rawValue: nsError.code)
+            switch code {
+            case .timedOut,
+                 .networkConnectionLost,
+                 .notConnectedToInternet,
+                 .cannotFindHost,
+                 .cannotConnectToHost,
+                 .dnsLookupFailed,
+                 .dataNotAllowed,
+                 .internationalRoamingOff,
+                 .callIsActive,
+                 .cannotLoadFromNetwork,
+                 .resourceUnavailable:
+                return true
+            default:
+                break
+            }
+        }
+
+        let message = nsError.localizedDescription.lowercased()
+        return message.contains("网络连接已中断")
+            || message.contains("network connection was lost")
+            || message.contains("timed out")
+            || message.contains("not connected")
     }
 
     private func submitWithRetry(
