@@ -9,3 +9,4 @@ DerivedData/
 .env
 .env.example 2
 .env.example 3
+/dist
